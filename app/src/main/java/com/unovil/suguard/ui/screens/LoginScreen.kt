@@ -1,4 +1,4 @@
-package com.unovil.suguard
+package com.unovil.suguard.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,34 +12,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.unovil.suguard.presentation.viewmodels.AuthSharedViewModel
 import com.unovil.suguard.ui.theme.SuGuardTheme
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseExperimental
-import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.github.jan.supabase.compose.auth.composeAuth
 import io.github.jan.supabase.compose.auth.ui.ProviderButtonContent
 import io.github.jan.supabase.gotrue.providers.Google
-import org.koin.java.KoinJavaComponent.inject
 
-object LoginScreen : Screen("login")
-
-val supabaseClient : SupabaseClient by inject(SupabaseClient::class.java)
-val viewModel : AuthSharedViewModel by inject(AuthSharedViewModel::class.java)
+data object LoginScreen : Screen("login")
 
 @OptIn(SupabaseExperimental::class)
 @Composable
 fun LoginScreen(
-    navController: NavController
+    navController: NavController,
+    authSharedViewModel: AuthSharedViewModel = hiltViewModel(),
+    supabaseClient: SupabaseClient
 ) {
 
     SuGuardTheme {
         val authState = supabaseClient.composeAuth.rememberSignInWithGoogle(
             onResult = {
-                if (it == NativeSignInResult.Success) {
-                    navController.navigate("home")
-                }
+                result -> authSharedViewModel.handleSignInResult(navController, result)
             }
         )
 

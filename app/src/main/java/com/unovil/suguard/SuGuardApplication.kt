@@ -1,11 +1,11 @@
 package com.unovil.suguard
 
 import android.app.Application
-import com.unovil.suguard.di.initKoin
+import dagger.hilt.android.HiltAndroidApp
 
-class Application : Application() {
+@HiltAndroidApp
+class SuGuardApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        initKoin(this@Application)
     }
 }

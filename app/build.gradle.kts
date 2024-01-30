@@ -3,6 +3,8 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android")
+    kotlin("kapt")
     kotlin("plugin.serialization") version "1.9.22"
 }
 
@@ -83,5 +85,12 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:compose-auth")
     implementation("io.github.jan-tennert.supabase:compose-auth-ui")
     implementation("io.ktor:ktor-client-android:2.3.7")
-    implementation("io.insert-koin:koin-android:3.5.3")
+    implementation("com.google.dagger:hilt-android:2.50")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+    kapt("com.google.dagger:hilt-android-compiler:2.50")
+    kapt("androidx.hilt:hilt-compiler:1.1.0")
+}
+
+kapt {
+    correctErrorTypes = true
 }

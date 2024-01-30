@@ -1,4 +1,4 @@
-package com.unovil.suguard
+package com.unovil.suguard.presentation.views
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
