@@ -21,20 +21,17 @@
             android:label="@string/app_name"
             android:theme="@style/Theme.SuGuard">
             <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="suguard" android:host="login" />
             </intent-filter>
         </activity>
 
         <activity
             android:name=".presentation.views.HomeActivity"
-            android:exported="true"
-            android:theme="@style/Theme.SuGuard">
-        </activity>
-
-        <activity
-            android:name=".presentation.views.SettingsActivity"
             android:exported="true"
             android:theme="@style/Theme.SuGuard">
         </activity>

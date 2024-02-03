@@ -1,6 +1,7 @@
 package com.unovil.suguard.presentation.views
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
@@ -18,30 +19,44 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.unovil.suguard.ui.screens.HomeScreen
+import com.unovil.suguard.ui.screens.SettingsScreen
 import com.unovil.suguard.ui.theme.SuGuardTheme
+import dagger.hilt.android.AndroidEntryPoint
+import io.github.jan.supabase.SupabaseClient
+import javax.inject.Inject
 
 data class BottomNavItem(
     val title: String,
     val itemSelected: ImageVector,
-    val itemUnselected: ImageVector
+    val itemUnselected: ImageVector,
+    val screenRoute: String
 )
+private const val TAG = "HomeActivity"
 
+@AndroidEntryPoint
 class HomeActivity : ComponentActivity() {
+    @Inject lateinit var supabaseClient: SupabaseClient
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i(TAG, "Started HomeActivity, intent: $intent")
+
         setContent {
             SuGuardTheme {
-                val bottomNavItems = listOf(
-                    BottomNavItem("Home", Icons.Filled.Home, Icons.Outlined.Home),
-                    BottomNavItem("Settings", Icons.Filled.Settings, Icons.Outlined.Settings)
-                )
+                val navController = rememberNavController()
 
-                var selectedNavItemIndex: Int by rememberSaveable { mutableIntStateOf(0) }
+                val bottomNavItems = listOf(
+                    BottomNavItem("Home", Icons.Filled.Home, Icons.Outlined.Home, HomeScreen.route),
+                    BottomNavItem("Settings", Icons.Filled.Settings, Icons.Outlined.Settings, SettingsScreen.route)
+                )
 
                 Surface(
                     color = MaterialTheme.colorScheme.background
@@ -49,15 +64,28 @@ class HomeActivity : ComponentActivity() {
                     Scaffold(
                         bottomBar = {
                             BottomNavBar(
-                                bottomNavItems,
-                                selectedNavItemIndex
-                            ) { selectedNavItemIndex = it }
-                        },
-                        content = {
-                            Text(text = "Hello world!")
-                            Modifier.padding(it)
+                                navController = navController,
+                                bottomNavItems = bottomNavItems
+                            )
                         }
-                    )
+                    ) { padding ->
+
+                        NavHost(
+                            navController = navController,
+                            startDestination = HomeScreen.route,
+                            modifier = Modifier.padding(padding),
+                            // enterTransition = { fadeIn(tween(150)) },
+                            // exitTransition = { fadeOut(tween(150)) }
+                        ) {
+                            composable(HomeScreen.route) {
+                                Log.i(TAG, "Started Home Screen")
+                                HomeScreen(navController = navController)
+                            }
+                            composable(SettingsScreen.route) {
+                                SettingsScreen(navController = navController)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -66,27 +94,37 @@ class HomeActivity : ComponentActivity() {
 
 @Composable
 fun BottomNavBar(
-    bottomNavItems: List<BottomNavItem>,
-    selectedNavItemIndex: Int,
-    onNavItemSelected: (Int) -> Unit) {
+    navController: NavHostController,
+    bottomNavItems: List<BottomNavItem>
+) {
 
     NavigationBar {
-        bottomNavItems.forEachIndexed { index, bottomNavItem ->
+        val currentRoute = currentRoute(navController)
+
+        bottomNavItems.forEach {bottomNavItem ->
             NavigationBarItem(
-                selected = selectedNavItemIndex == index,
+                selected = currentRoute == bottomNavItem.screenRoute,
                 onClick = {
-                    onNavItemSelected(index)
-                    /* TODO: add navcontroller prop to navitem */
+                    if (currentRoute != bottomNavItem.screenRoute)
+                        navController.navigate(bottomNavItem.screenRoute)
                 },
+                alwaysShowLabel = false,
                 label = { Text(bottomNavItem.title) },
                 icon = {
                     Icon(
-                        imageVector = if (index == selectedNavItemIndex) {
+                        imageVector = if (currentRoute == bottomNavItem.screenRoute) {
                             bottomNavItem.itemSelected
                         } else bottomNavItem.itemUnselected,
                         contentDescription = bottomNavItem.title
                     )
-                })
+                }
+            )
         }
     }
+}
+
+@Composable
+fun currentRoute(navController: NavHostController): String? {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    return navBackStackEntry?.destination?.route
 }
