@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.unovil.suguard.presentation.views.HomeActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
@@ -18,6 +19,7 @@ import io.github.jan.supabase.gotrue.parseFragmentAndImportSession
 import io.github.jan.supabase.gotrue.providers.Google
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.gotrue.providers.builtin.IDToken
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -27,44 +29,67 @@ private const val TAG = "AuthSharedViewModel"
 
 @HiltViewModel
 class AuthSharedViewModel @Inject constructor(
-    private val supabaseClient: SupabaseClient
+    private val supabaseClient: SupabaseClient,
+    @ApplicationContext val applicationContext: Context
 ) : ViewModel() {
     private val coroutineScope = viewModelScope
     private val loginAlert = MutableStateFlow<String?>(null)
     private val _isSignedIn = MutableStateFlow(false)
+    private val _sessionStatus = supabaseClient.auth.sessionStatus
+    val sessionStatus = _sessionStatus.value
 
-    fun handleSignInResult(navController: NavHostController, nativeSignInResult: NativeSignInResult, context: Context) {
-        Log.i(TAG, "Value of NativeSignInResult is $nativeSignInResult")
-
-        when (nativeSignInResult) {
-            is NativeSignInResult.Success -> {
-                Log.i(TAG, "Sign in success")
-                _isSignedIn.value = true
-                navController.popBackStack("auth", inclusive = true)
-                val intent = Intent(context, HomeActivity::class.java)
-                context.startActivity(intent)
-            }
-            is NativeSignInResult.Error -> {
-                Log.i(TAG, "Error message: ${nativeSignInResult.message}")
-                coroutineScope.launch {
-                    val exception = kotlin.runCatching {
-                        supabaseClient.auth.signInWith(Google)
-                    }.exceptionOrNull()
-
-                    if (exception != null) {
-                        Log.e(TAG, "Error after manual sign in!" +
-                                " ${exception.message}")
-                    }
-                }
-            }
-            else -> {
-                Log.i(TAG, "Sign in error")
-                loginAlert.value = "There was an error while logging in. Please try again."
-            }
-        }
+    companion object {
+        val signedInTimes = MutableStateFlow(0)
     }
 
-    fun handleSignInResult(intent: Intent, sessionStatus: StateFlow<SessionStatus>, context: Context) {
+    fun handleSignInResult(
+        navController: NavHostController,
+        nativeSignInResult: NativeSignInResult,
+        context: Context = applicationContext
+    ) {
+        Log.i(TAG, "Value of NativeSignInResult is $nativeSignInResult")
+        Log.i(TAG, "AuthSharedViewModel was run ${signedInTimes.value} times, now from native")
+        signedInTimes.value += 1
+
+        MainScope().launch {
+            when (nativeSignInResult) {
+                is NativeSignInResult.Success -> {
+                    Log.i(TAG, "Sign in success")
+                    _isSignedIn.value = true
+                    navController.popBackStack("auth", inclusive = true)
+                    val intent = Intent(context, HomeActivity::class.java)
+                    context.startActivity(intent)
+                }
+                is NativeSignInResult.Error -> {
+                    Log.i(TAG, "Error message: ${nativeSignInResult.message}")
+                    /*coroutineScope.launch (Dispatchers.Main) {
+                        val exception = kotlin.runCatching {
+                            supabaseClient.auth.signInWith(Google)
+                        }.exceptionOrNull()
+
+                        if (exception != null) {
+                            Log.e(TAG, "Error after manual sign in!" +
+                                    " ${exception.message}")
+                        }
+                    }*/
+                }
+                else -> {
+                    Log.i(TAG, "Sign in error")
+                    loginAlert.value = "There was an error while logging in. Please try again."
+                }
+            }
+        }
+
+    }
+
+    fun handleSignInResult(
+        intent: Intent,
+        sessionStatus: StateFlow<SessionStatus>,
+        context: Context = applicationContext
+    ) {
+        Log.i(TAG, "AuthSharedViewModel was run ${signedInTimes.value} times, now from intent")
+        signedInTimes.value += 1
+
         supabaseClient.handleDeeplinks(intent)
         if (sessionStatus.value is SessionStatus.Authenticated) {
             val intentToAct = Intent(context, HomeActivity::class.java)

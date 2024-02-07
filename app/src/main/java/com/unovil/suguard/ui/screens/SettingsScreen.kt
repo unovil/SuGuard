@@ -34,9 +34,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.unovil.suguard.R
+import com.unovil.suguard.core.models.UserInformation
+import com.unovil.suguard.presentation.viewmodels.SettingsViewModel
 import com.unovil.suguard.presentation.views.BottomNavBar
 import com.unovil.suguard.presentation.views.BottomNavItem
 import com.unovil.suguard.ui.theme.SuGuardTheme
@@ -46,9 +50,11 @@ data object SettingsScreen : Screen("settings")
 @Composable
 fun SettingsScreen(
     navController: NavHostController,
-    // settingsViewModel: SettingsViewModel = hiltViewModel()
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     SuGuardTheme {
+        val userInformation: UserInformation? = settingsViewModel.retrieveUserInformation()
+
         Column {
             Surface(
                 modifier = Modifier
@@ -56,24 +62,24 @@ fun SettingsScreen(
                     .padding(vertical = 24.dp)
             ) {
                 Column {
-                    Image(
-                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                    AsyncImage(
+                        model = userInformation?.pictureUrl,
                         modifier = Modifier
                             .size(100.dp)
                             .clip(CircleShape)
                             .border(8.dp, Color.Black, CircleShape) // for testing
                             .align(Alignment.CenterHorizontally),
-                        contentDescription = "google",
+                        contentDescription = userInformation?.name
                     )
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         fontSize = 27.sp,
                         fontWeight = FontWeight.SemiBold,
-                        text = "Uno Villegas (Banoffee)",
+                        text = userInformation?.name ?: "null",
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "uno070825@gmail.com",
+                        text = userInformation?.email ?: "null",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
@@ -96,7 +102,6 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .clip(RectangleShape)
                                 .size(20.dp), // for testing
-
                             contentDescription = "google"
                         )
                         Text(

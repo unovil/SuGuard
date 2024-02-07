@@ -26,8 +26,8 @@ object SupabaseModule {
         ) {
             install(Postgrest)
             install(Auth) {
-                scheme = "suguard"
-                host = "login"
+                /*scheme = "suguard"
+                host = "login"*/
             }
             install(ComposeAuth) {
                 googleNativeLogin(BuildConfig.WEB_CLIENT_ID)

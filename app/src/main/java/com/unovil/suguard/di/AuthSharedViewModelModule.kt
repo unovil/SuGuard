@@ -1,5 +1,6 @@
 package com.unovil.suguard.di
 
+import android.content.Context
 import com.unovil.suguard.presentation.viewmodels.AuthSharedViewModel
 import dagger.Module
 import dagger.Provides
@@ -11,10 +12,9 @@ import io.github.jan.supabase.SupabaseClient
 @Module
 @InstallIn(ViewModelComponent::class)
 object AuthSharedViewModelModule {
-
     @Provides
     @ViewModelScoped
-    fun provideAuthSharedViewModel(supabaseClient: SupabaseClient): AuthSharedViewModel {
-        return AuthSharedViewModel(supabaseClient)
+    fun provideAuthSharedViewModel(supabaseClient: SupabaseClient, applicationContext: Context): AuthSharedViewModel {
+        return AuthSharedViewModel(supabaseClient, applicationContext = applicationContext)
     }
 }
